@@ -1,0 +1,193 @@
+<html>
+<head>
+<title>URL_CHEK_BOT.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cf8e6d;}
+.s1 { color: #bcbec4;}
+.s2 { color: #7a7e85;}
+.s3 { color: #bcbec4;}
+.s4 { color: #6aab73;}
+.s5 { color: #2aacb8;}
+</style>
+</head>
+<body bgcolor="#1e1f22">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+URL_CHEK_BOT.py</font>
+</center></td></tr></table>
+<pre><span class="s0">import </span><span class="s1">requests </span><span class="s2">#Библиотека для проверки пингов</span>
+<span class="s0">from </span><span class="s1">datetime </span><span class="s0">import </span><span class="s1">timedelta</span><span class="s3">, </span><span class="s1">datetime</span><span class="s3">, </span><span class="s1">time</span><span class="s3">, </span><span class="s1">timezone</span><span class="s2">#Библиотека функций веремени</span>
+<span class="s0">import </span><span class="s1">time</span>
+<span class="s0">import </span><span class="s1">dash </span><span class="s2">#Библиотека для дашборда</span>
+<span class="s0">from </span><span class="s1">dash </span><span class="s0">import </span><span class="s1">html</span>
+<span class="s0">import </span><span class="s1">dash_bootstrap_components </span><span class="s0">as </span><span class="s1">dbc</span>
+<span class="s0">from </span><span class="s1">dash</span><span class="s3">.</span><span class="s1">dependencies </span><span class="s0">import </span><span class="s1">Input</span><span class="s3">, </span><span class="s1">Output</span>
+<span class="s0">import </span><span class="s1">pandas </span><span class="s0">as </span><span class="s1">pd</span>
+<span class="s0">import </span><span class="s1">sqlite3 </span><span class="s0">as </span><span class="s1">sl </span><span class="s2">#Библиотека для бд</span>
+<span class="s2">#import threading #Библиотека для включения многопоточности</span>
+<span class="s0">import </span><span class="s1">telebot  </span><span class="s2">#Добавление библиотеки для рабты с телеграмм ботом</span>
+<span class="s0">from </span><span class="s1">telebot </span><span class="s0">import </span><span class="s1">types</span>
+<span class="s0">import </span><span class="s1">urllib3</span>
+<span class="s0">import </span><span class="s1">plotly</span><span class="s3">.</span><span class="s1">graph_objects </span><span class="s0">as </span><span class="s1">go </span><span class="s2">#Библиотека графики</span>
+<span class="s0">import </span><span class="s1">random </span><span class="s2">#Библиотека рандома</span>
+
+<span class="s1">urllib3</span><span class="s3">.</span><span class="s1">disable_warnings</span><span class="s3">()</span>
+<span class="s2">#Объявление токена бота</span>
+<span class="s1">bot </span><span class="s3">= </span><span class="s1">telebot</span><span class="s3">.</span><span class="s1">TeleBot</span><span class="s3">(</span><span class="s4">'6807239530:AAFBGM6itlOEEMbyjbTVmsC2b2tqMsZ9_SQ'</span><span class="s3">)</span>
+<span class="s1">u </span><span class="s3">= [[</span><span class="s4">&quot;Сбер&quot;</span><span class="s3">,</span><span class="s4">&quot;https://www.sberbank.ru&quot;</span><span class="s3">, </span><span class="s5">0</span><span class="s3">],</span>
+    <span class="s3">[</span><span class="s4">&quot;ВТБ&quot;</span><span class="s3">, </span><span class="s4">&quot;https://online.vtb.ru&quot;</span><span class="s3">, </span><span class="s5">0</span><span class="s3">],</span>
+    <span class="s3">[</span><span class="s4">&quot;ГазпромБанк&quot;</span><span class="s3">, </span><span class="s4">&quot;https://www.gazprombank.ru/&quot;</span><span class="s3">, </span><span class="s5">0</span><span class="s3">],</span>
+    <span class="s3">[</span><span class="s4">&quot;Промсвязьбанк&quot;</span><span class="s3">,</span><span class="s4">&quot;https://www.psbank.ru/&quot;</span><span class="s3">, </span><span class="s5">0</span><span class="s3">],</span>
+    <span class="s3">[</span><span class="s4">&quot;ТБанк&quot;</span><span class="s3">, </span><span class="s4">&quot;https://www.tbank.ru&quot;</span><span class="s3">, </span><span class="s5">0</span><span class="s3">]]</span>
+<span class="s1">headers </span><span class="s3">= { </span><span class="s4">&quot;User-Agent&quot;</span><span class="s3">: </span><span class="s4">&quot;Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 YaBrowser/24.6.0.0 Safari/537.36&quot;</span><span class="s3">}</span>
+<span class="s1">all </span><span class="s3">=[</span><span class="s5">0</span><span class="s3">,</span><span class="s5">0</span><span class="s3">,</span><span class="s5">0</span><span class="s3">,</span><span class="s5">0</span><span class="s3">,</span><span class="s5">0</span><span class="s3">]</span>
+
+<span class="s2">#Стартовое сообщение бота</span>
+<span class="s3">@</span><span class="s1">bot</span><span class="s3">.</span><span class="s1">message_handler</span><span class="s3">(</span><span class="s1">commands</span><span class="s3">=[</span><span class="s4">'start'</span><span class="s3">])</span>
+<span class="s0">def </span><span class="s1">startBot</span><span class="s3">(</span><span class="s1">message</span><span class="s3">):</span>
+    <span class="s1">first_mess </span><span class="s3">= </span><span class="s4">f&quot;Начать проверку сайтов?&quot;</span>
+    <span class="s1">bot</span><span class="s3">.</span><span class="s1">send_message</span><span class="s3">(</span><span class="s1">message</span><span class="s3">.</span><span class="s1">chat</span><span class="s3">.</span><span class="s1">id</span><span class="s3">, </span><span class="s1">first_mess</span><span class="s3">)</span>
+
+    <span class="s1">bot</span><span class="s3">.</span><span class="s1">register_next_step_handler</span><span class="s3">(</span><span class="s1">message</span><span class="s3">, </span><span class="s1">check_start</span><span class="s3">)</span>
+
+<span class="s3">@</span><span class="s1">bot</span><span class="s3">.</span><span class="s1">message_handler</span><span class="s3">(</span><span class="s1">commands</span><span class="s3">=[</span><span class="s4">'отчёт'</span><span class="s3">])</span>
+<span class="s0">def </span><span class="s1">startBot</span><span class="s3">(</span><span class="s1">message</span><span class="s3">):</span>
+    <span class="s1">mess </span><span class="s3">= </span><span class="s4">f&quot;Сформировать отчёт?&quot;</span>
+    <span class="s1">bot</span><span class="s3">.</span><span class="s1">send_message</span><span class="s3">(</span><span class="s1">message</span><span class="s3">.</span><span class="s1">chat</span><span class="s3">.</span><span class="s1">id</span><span class="s3">, </span><span class="s1">mess</span><span class="s3">)</span>
+    <span class="s1">bot</span><span class="s3">.</span><span class="s1">register_next_step_handler</span><span class="s3">(</span><span class="s1">message</span><span class="s3">, </span><span class="s1">check_total_stop</span><span class="s3">)</span>
+
+<span class="s1">con </span><span class="s3">= </span><span class="s1">sl</span><span class="s3">.</span><span class="s1">connect</span><span class="s3">(</span><span class="s4">'baza.db'</span><span class="s3">)</span>
+<span class="s1">cursor </span><span class="s3">= </span><span class="s1">con</span><span class="s3">.</span><span class="s1">cursor</span><span class="s3">()</span>
+<span class="s2">#Открываем базу</span>
+<span class="s1">con</span><span class="s3">.</span><span class="s1">execute</span><span class="s3">(</span><span class="s4">&quot;&quot;&quot; CREATE TABLE IF NOT EXISTS test ( 
+                    num INEGER, 
+                    comp TEXT, 
+                    type TEXT, 
+                    url TEXT, 
+                    tstop INEGER, 
+                    err TEXT, 
+                    trun INEGER) 
+                &quot;&quot;&quot;</span><span class="s3">)</span>
+<span class="s1">con</span><span class="s3">.</span><span class="s1">commit</span><span class="s3">()</span>
+<span class="s1">con</span><span class="s3">.</span><span class="s1">close</span><span class="s3">()</span>
+
+<span class="s2"># Функция для проверки доступности сайта</span>
+<span class="s0">def </span><span class="s1">check_website_status</span><span class="s3">(</span><span class="s1">i</span><span class="s3">):</span>
+    <span class="s0">try</span><span class="s3">:</span>
+        <span class="s1">response</span><span class="s3">= </span><span class="s1">requests</span><span class="s3">.</span><span class="s1">get</span><span class="s3">(</span><span class="s1">i</span><span class="s3">, </span><span class="s1">headers</span><span class="s3">=</span><span class="s1">headers</span><span class="s3">, </span><span class="s1">verify</span><span class="s3">=</span><span class="s0">False</span><span class="s3">, </span><span class="s1">timeout</span><span class="s3">=</span><span class="s5">5</span><span class="s3">)</span>
+        <span class="s0">return </span><span class="s1">response</span><span class="s3">.</span><span class="s1">status_code</span>
+    <span class="s0">except </span><span class="s1">requests</span><span class="s3">.</span><span class="s1">exceptions</span><span class="s3">.</span><span class="s1">RequestException</span><span class="s3">:</span>
+        <span class="s0">return False</span>
+
+<span class="s2"># Цикл проверки сайтов с отчётом в чат каждые 5-6 минут</span>
+<span class="s0">def </span><span class="s1">check_start</span><span class="s3">(</span><span class="s1">message</span><span class="s3">):</span>
+    <span class="s1">num </span><span class="s3">= </span><span class="s5">1</span>
+    <span class="s0">while True</span><span class="s3">:</span>
+        <span class="s0">for </span><span class="s1">a </span><span class="s0">in </span><span class="s1">range</span><span class="s3">(</span><span class="s1">len</span><span class="s3">(</span><span class="s1">u</span><span class="s3">)):</span>
+            <span class="s1">now </span><span class="s3">= </span><span class="s1">datetime</span><span class="s3">.</span><span class="s1">now</span><span class="s3">()</span>
+            <span class="s1">t </span><span class="s3">= </span><span class="s1">now</span><span class="s3">.</span><span class="s1">hour </span><span class="s3">* </span><span class="s5">3600 </span><span class="s3">+ </span><span class="s1">now</span><span class="s3">.</span><span class="s1">minute </span><span class="s3">* </span><span class="s5">60 </span><span class="s3">+ </span><span class="s1">now</span><span class="s3">.</span><span class="s1">second</span>
+            <span class="s1">s </span><span class="s3">= </span><span class="s1">check_website_status</span><span class="s3">(</span><span class="s1">u</span><span class="s3">[</span><span class="s1">a</span><span class="s3">][</span><span class="s5">1</span><span class="s3">])</span>
+            <span class="s0">if </span><span class="s1">s </span><span class="s3">== </span><span class="s5">200 </span><span class="s0">and </span><span class="s1">u</span><span class="s3">[</span><span class="s1">a</span><span class="s3">][</span><span class="s5">2</span><span class="s3">] &gt;</span><span class="s5">0 </span><span class="s3">:</span>
+                <span class="s1">con </span><span class="s3">= </span><span class="s1">sl</span><span class="s3">.</span><span class="s1">connect</span><span class="s3">(</span><span class="s4">'example.db'</span><span class="s3">)</span>
+                <span class="s1">cursor </span><span class="s3">= </span><span class="s1">con</span><span class="s3">.</span><span class="s1">cursor</span><span class="s3">()</span>
+                <span class="s1">cursor</span><span class="s3">.</span><span class="s1">execute</span><span class="s3">(</span><span class="s4">&quot;UPDATE test SET trun = ? WHERE num = ?&quot;</span><span class="s3">, (</span><span class="s1">t</span><span class="s3">, </span><span class="s1">u</span><span class="s3">[</span><span class="s1">a</span><span class="s3">][</span><span class="s5">2</span><span class="s3">]))</span>
+                <span class="s1">con</span><span class="s3">.</span><span class="s1">commit</span><span class="s3">()</span>
+                <span class="s1">con</span><span class="s3">.</span><span class="s1">close</span><span class="s3">()</span>
+                <span class="s1">bot</span><span class="s3">.</span><span class="s1">send_message</span><span class="s3">(</span><span class="s1">message</span><span class="s3">.</span><span class="s1">chat</span><span class="s3">.</span><span class="s1">id</span><span class="s3">, </span><span class="s4">f&quot;Сайт компании </span><span class="s0">{</span><span class="s1">u</span><span class="s3">[</span><span class="s1">a</span><span class="s3">][</span><span class="s5">0</span><span class="s3">]</span><span class="s0">}  </span><span class="s4">- </span><span class="s0">{</span><span class="s1">u</span><span class="s3">[</span><span class="s1">a</span><span class="s3">][</span><span class="s5">1</span><span class="s3">]</span><span class="s0">} </span><span class="s4">в </span><span class="s0">{</span><span class="s1">now</span><span class="s3">.</span><span class="s1">time</span><span class="s3">()</span><span class="s0">} </span><span class="s4">доступен.&quot;</span><span class="s3">)</span>
+                <span class="s1">u</span><span class="s3">[</span><span class="s1">a</span><span class="s3">][</span><span class="s5">2</span><span class="s3">] = </span><span class="s5">0</span>
+            <span class="s0">if </span><span class="s1">s </span><span class="s3">&gt;= </span><span class="s5">400 </span><span class="s0">and </span><span class="s1">u</span><span class="s3">[</span><span class="s1">a</span><span class="s3">][</span><span class="s5">2</span><span class="s3">] == </span><span class="s5">0</span><span class="s3">:</span>
+                <span class="s1">u</span><span class="s3">[</span><span class="s1">a</span><span class="s3">][</span><span class="s5">2</span><span class="s3">] = </span><span class="s1">num</span>
+                <span class="s1">num </span><span class="s3">= </span><span class="s1">num </span><span class="s3">+ </span><span class="s5">1</span>
+                <span class="s1">con </span><span class="s3">= </span><span class="s1">sl</span><span class="s3">.</span><span class="s1">connect</span><span class="s3">(</span><span class="s4">'baza.db'</span><span class="s3">)</span>
+                <span class="s1">cursor </span><span class="s3">= </span><span class="s1">con</span><span class="s3">.</span><span class="s1">cursor</span><span class="s3">()</span>
+                <span class="s1">cursor</span><span class="s3">.</span><span class="s1">execute</span><span class="s3">(</span><span class="s4">&quot;&quot;&quot;INSERT INTO test (num, comp, type, url, tstop, err, trun) VALUES (?,?,?,?,?,?,?)&quot;&quot;&quot;</span><span class="s3">, (</span><span class="s1">u</span><span class="s3">[</span><span class="s1">a</span><span class="s3">][</span><span class="s5">2</span><span class="s3">], </span><span class="s1">u</span><span class="s3">[</span><span class="s1">a</span><span class="s3">][</span><span class="s5">0</span><span class="s3">], </span><span class="s4">&quot;Сайт&quot;</span><span class="s3">, </span><span class="s1">u</span><span class="s3">[</span><span class="s1">a</span><span class="s3">][</span><span class="s5">1</span><span class="s3">], </span><span class="s1">t</span><span class="s3">, </span><span class="s1">s</span><span class="s3">, -</span><span class="s5">1</span><span class="s3">))</span>
+                <span class="s1">con</span><span class="s3">.</span><span class="s1">commit</span><span class="s3">()</span>
+                <span class="s1">con</span><span class="s3">.</span><span class="s1">close</span><span class="s3">()</span>
+                <span class="s1">bot</span><span class="s3">.</span><span class="s1">send_message</span><span class="s3">(</span><span class="s1">message</span><span class="s3">.</span><span class="s1">chat</span><span class="s3">.</span><span class="s1">id</span><span class="s3">, </span><span class="s4">f&quot;Сайт компании </span><span class="s0">{</span><span class="s1">u</span><span class="s3">[</span><span class="s1">a</span><span class="s3">][</span><span class="s5">0</span><span class="s3">]</span><span class="s0">} </span><span class="s4">- </span><span class="s0">{</span><span class="s1">u</span><span class="s3">[</span><span class="s1">a</span><span class="s3">][</span><span class="s5">1</span><span class="s3">]</span><span class="s0">} </span><span class="s4">в </span><span class="s0">{</span><span class="s1">now</span><span class="s3">.</span><span class="s1">time</span><span class="s3">()</span><span class="s0">} </span><span class="s4">недоступен. Код состояния: </span><span class="s0">{</span><span class="s1">s</span><span class="s0">}</span><span class="s4">&quot;</span><span class="s3">)</span>
+            <span class="s0">if </span><span class="s1">s </span><span class="s3">== </span><span class="s0">False and </span><span class="s1">u</span><span class="s3">[</span><span class="s1">a</span><span class="s3">][</span><span class="s5">2</span><span class="s3">] == </span><span class="s5">0</span><span class="s3">:</span>
+                <span class="s1">u</span><span class="s3">[</span><span class="s1">a</span><span class="s3">][</span><span class="s5">2</span><span class="s3">] = </span><span class="s1">num</span>
+                <span class="s1">num </span><span class="s3">= </span><span class="s1">num </span><span class="s3">+ </span><span class="s5">1</span>
+                <span class="s1">con </span><span class="s3">= </span><span class="s1">sl</span><span class="s3">.</span><span class="s1">connect</span><span class="s3">(</span><span class="s4">'baza.db'</span><span class="s3">)</span>
+                <span class="s1">cursor </span><span class="s3">= </span><span class="s1">con</span><span class="s3">.</span><span class="s1">cursor</span><span class="s3">()</span>
+                <span class="s1">cursor</span><span class="s3">.</span><span class="s1">execute</span><span class="s3">(</span><span class="s4">&quot;&quot;&quot;INSERT INTO test (num, comp, type, url, tstop, err, trun) VALUES (?,?,?,?,?,?,?)&quot;&quot;&quot;</span><span class="s3">,(</span><span class="s1">u</span><span class="s3">[</span><span class="s1">a</span><span class="s3">][</span><span class="s5">2</span><span class="s3">], </span><span class="s1">u</span><span class="s3">[</span><span class="s1">a</span><span class="s3">][</span><span class="s5">0</span><span class="s3">], </span><span class="s4">&quot;Сайт&quot;</span><span class="s3">, </span><span class="s1">u</span><span class="s3">[</span><span class="s1">a</span><span class="s3">][</span><span class="s5">1</span><span class="s3">], </span><span class="s1">t</span><span class="s3">, </span><span class="s4">&quot;TIMED_OUT&quot;</span><span class="s3">,-</span><span class="s5">1</span><span class="s3">))</span>
+                <span class="s1">con</span><span class="s3">.</span><span class="s1">commit</span><span class="s3">()</span>
+                <span class="s1">con</span><span class="s3">.</span><span class="s1">close</span><span class="s3">()</span>
+                <span class="s1">bot</span><span class="s3">.</span><span class="s1">send_message</span><span class="s3">(</span><span class="s1">message</span><span class="s3">.</span><span class="s1">chat</span><span class="s3">.</span><span class="s1">id</span><span class="s3">, </span><span class="s4">f&quot;Время ожидания ответа от cайта компании </span><span class="s0">{</span><span class="s1">u</span><span class="s3">[</span><span class="s1">a</span><span class="s3">][</span><span class="s5">0</span><span class="s3">]</span><span class="s0">} </span><span class="s4">- </span><span class="s0">{</span><span class="s1">u</span><span class="s3">[</span><span class="s1">a</span><span class="s3">][</span><span class="s5">1</span><span class="s3">]</span><span class="s0">} </span><span class="s4">в </span><span class="s0">{</span><span class="s1">now</span><span class="s3">.</span><span class="s1">time</span><span class="s3">()</span><span class="s0">} </span><span class="s4">превышено.&quot;</span><span class="s3">)</span>
+        <span class="s1">con </span><span class="s3">= </span><span class="s1">sl</span><span class="s3">.</span><span class="s1">connect</span><span class="s3">(</span><span class="s4">'baza.db'</span><span class="s3">)</span>
+        <span class="s1">time</span><span class="s3">.</span><span class="s1">sleep</span><span class="s3">(</span><span class="s1">random</span><span class="s3">.</span><span class="s1">uniform</span><span class="s3">(</span><span class="s5">301</span><span class="s3">, </span><span class="s5">360</span><span class="s3">))</span>
+
+<span class="s2">#Функция провеки наличия ошибок при подключении к сайту и получения информации из БД</span>
+<span class="s0">def </span><span class="s1">down_time</span><span class="s3">(</span><span class="s1">b</span><span class="s3">,</span><span class="s1">i</span><span class="s3">,</span><span class="s1">err_num</span><span class="s3">):</span>
+    <span class="s0">try</span><span class="s3">:</span>
+        <span class="s2"># Подключение к базе данных</span>
+        <span class="s1">con </span><span class="s3">= </span><span class="s1">sl</span><span class="s3">.</span><span class="s1">connect</span><span class="s3">(</span><span class="s4">'baza.db'</span><span class="s3">)</span>
+        <span class="s1">cursor </span><span class="s3">= </span><span class="s1">con</span><span class="s3">.</span><span class="s1">cursor</span><span class="s3">()</span>
+        <span class="s1">cursor</span><span class="s3">.</span><span class="s1">execute</span><span class="s3">(</span><span class="s4">&quot;SELECT trun FROM test WHERE comp = ? AND num = ?&quot;</span><span class="s3">, (</span><span class="s1">b</span><span class="s3">, </span><span class="s1">i</span><span class="s3">))</span>
+        <span class="s1">t1 </span><span class="s3">= </span><span class="s1">cursor</span><span class="s3">.</span><span class="s1">fetchone</span><span class="s3">()</span>
+        <span class="s1">cursor</span><span class="s3">.</span><span class="s1">close</span><span class="s3">()</span>
+        <span class="s1">con</span><span class="s3">.</span><span class="s1">close</span><span class="s3">()</span>
+        <span class="s1">run </span><span class="s3">= </span><span class="s1">t1</span><span class="s3">[</span><span class="s1">err_num</span><span class="s3">]</span>
+        <span class="s0">if </span><span class="s1">run </span><span class="s3">== -</span><span class="s5">1</span><span class="s3">:</span>
+            <span class="s1">now </span><span class="s3">= </span><span class="s1">datetime</span><span class="s3">.</span><span class="s1">now</span><span class="s3">()</span>
+            <span class="s1">t </span><span class="s3">= </span><span class="s1">now</span><span class="s3">.</span><span class="s1">hour </span><span class="s3">* </span><span class="s5">3600 </span><span class="s3">+ </span><span class="s1">now</span><span class="s3">.</span><span class="s1">minute </span><span class="s3">* </span><span class="s5">60 </span><span class="s3">+ </span><span class="s1">now</span><span class="s3">.</span><span class="s1">second</span>
+            <span class="s1">run </span><span class="s3">= </span><span class="s1">t</span>
+        <span class="s1">con </span><span class="s3">= </span><span class="s1">sl</span><span class="s3">.</span><span class="s1">connect</span><span class="s3">(</span><span class="s4">'baza.db'</span><span class="s3">)</span>
+        <span class="s1">cursor </span><span class="s3">= </span><span class="s1">con</span><span class="s3">.</span><span class="s1">cursor</span><span class="s3">()</span>
+        <span class="s1">cursor</span><span class="s3">.</span><span class="s1">execute</span><span class="s3">(</span><span class="s4">&quot;SELECT tstop FROM test WHERE comp = ? AND num = ?&quot;</span><span class="s3">, (</span><span class="s1">b</span><span class="s3">, </span><span class="s1">i</span><span class="s3">))</span>
+        <span class="s1">t2 </span><span class="s3">= </span><span class="s1">cursor</span><span class="s3">.</span><span class="s1">fetchone</span><span class="s3">()</span>
+        <span class="s1">stop </span><span class="s3">= </span><span class="s1">t2</span><span class="s3">[</span><span class="s1">err_num</span><span class="s3">]</span>
+        <span class="s1">cursor</span><span class="s3">.</span><span class="s1">close</span><span class="s3">()</span>
+        <span class="s1">con</span><span class="s3">.</span><span class="s1">close</span><span class="s3">()</span>
+        <span class="s0">return </span><span class="s3">[</span><span class="s1">run</span><span class="s3">,</span><span class="s1">stop</span><span class="s3">]</span>
+    <span class="s0">except</span><span class="s3">:</span>
+        <span class="s0">return </span><span class="s3">[</span><span class="s5">0</span><span class="s3">,</span><span class="s5">0</span><span class="s3">]</span>
+
+<span class="s2">#Функция вычитания</span>
+<span class="s0">def </span><span class="s1">time_difference</span><span class="s3">(</span><span class="s1">t1</span><span class="s3">, </span><span class="s1">t2</span><span class="s3">):</span>
+    <span class="s0">if </span><span class="s1">t1 </span><span class="s3">&gt; </span><span class="s1">t2</span><span class="s3">:</span>
+        <span class="s1">delta </span><span class="s3">= </span><span class="s1">t1 </span><span class="s3">- </span><span class="s1">t2</span>
+    <span class="s0">else</span><span class="s3">:</span>
+        <span class="s1">delta </span><span class="s3">= </span><span class="s1">t2 </span><span class="s3">- </span><span class="s1">t1</span>
+
+    <span class="s0">return </span><span class="s1">delta</span>
+
+<span class="s2">#Фукнция для создания отчёта и вывода таблицы</span>
+<span class="s0">def </span><span class="s1">check_total_stop</span><span class="s3">(</span><span class="s1">m</span><span class="s3">):</span>
+    <span class="s1">b </span><span class="s3">= []</span>
+    <span class="s2"># Подключение к базе данных</span>
+    <span class="s1">con </span><span class="s3">= </span><span class="s1">sl</span><span class="s3">.</span><span class="s1">connect</span><span class="s3">(</span><span class="s4">'baza.db'</span><span class="s3">)</span>
+    <span class="s1">cursor </span><span class="s3">= </span><span class="s1">con</span><span class="s3">.</span><span class="s1">cursor</span><span class="s3">()</span>
+    <span class="s2"># Выполнение SQL-запроса для подсчета строк</span>
+    <span class="s1">cursor</span><span class="s3">.</span><span class="s1">execute</span><span class="s3">(</span><span class="s4">'SELECT COUNT(*) FROM test'</span><span class="s3">)</span>
+    <span class="s2"># Получение результата</span>
+    <span class="s1">row_count </span><span class="s3">= </span><span class="s1">cursor</span><span class="s3">.</span><span class="s1">fetchone</span><span class="s3">()[</span><span class="s5">0</span><span class="s3">]</span>
+    <span class="s1">err_time </span><span class="s3">= ([],[],[],[],[])</span>
+    <span class="s1">run_time </span><span class="s3">= ([],[],[],[],[])</span>
+    <span class="s1">k</span><span class="s3">=</span><span class="s5">0</span>
+    <span class="s0">for </span><span class="s1">a </span><span class="s0">in </span><span class="s1">range</span><span class="s3">(</span><span class="s1">len</span><span class="s3">(</span><span class="s1">u</span><span class="s3">)):</span>
+        <span class="s1">err_num </span><span class="s3">= </span><span class="s5">0</span>
+        <span class="s0">for </span><span class="s1">i </span><span class="s0">in </span><span class="s1">range</span><span class="s3">(</span><span class="s1">row_count</span><span class="s3">):</span>
+            <span class="s1">p </span><span class="s3">= </span><span class="s1">down_time</span><span class="s3">(</span><span class="s1">u</span><span class="s3">[</span><span class="s1">a</span><span class="s3">][</span><span class="s5">0</span><span class="s3">], </span><span class="s1">i</span><span class="s3">+</span><span class="s5">1</span><span class="s3">, </span><span class="s1">err_num</span><span class="s3">)</span>
+            <span class="s1">all</span><span class="s3">[</span><span class="s1">a</span><span class="s3">] = </span><span class="s1">all</span><span class="s3">[</span><span class="s1">a</span><span class="s3">] + </span><span class="s1">p</span><span class="s3">[</span><span class="s5">0</span><span class="s3">] - </span><span class="s1">p</span><span class="s3">[</span><span class="s5">1</span><span class="s3">]</span>
+            <span class="s0">if </span><span class="s1">p </span><span class="s3">!= [</span><span class="s5">0</span><span class="s3">,</span><span class="s5">0</span><span class="s3">]:</span>
+                <span class="s1">err_num </span><span class="s3">= </span><span class="s1">err_num </span><span class="s3">+ </span><span class="s5">1</span>
+            <span class="s0">if </span><span class="s1">p</span><span class="s3">[</span><span class="s5">0</span><span class="s3">] != </span><span class="s5">0 </span><span class="s0">and </span><span class="s1">p</span><span class="s3">[</span><span class="s5">1</span><span class="s3">] != </span><span class="s5">0</span><span class="s3">:</span>
+                <span class="s1">err_time</span><span class="s3">[</span><span class="s1">k</span><span class="s3">].</span><span class="s1">append</span><span class="s3">(</span><span class="s1">str</span><span class="s3">(</span><span class="s1">timedelta</span><span class="s3">(</span><span class="s1">seconds</span><span class="s3">=</span><span class="s1">p</span><span class="s3">[</span><span class="s5">1</span><span class="s3">])))</span>
+                <span class="s1">run_time</span><span class="s3">[</span><span class="s1">k</span><span class="s3">].</span><span class="s1">append</span><span class="s3">(</span><span class="s1">str</span><span class="s3">(</span><span class="s1">timedelta</span><span class="s3">(</span><span class="s1">seconds</span><span class="s3">=</span><span class="s1">p</span><span class="s3">[</span><span class="s5">0</span><span class="s3">])))</span>
+        <span class="s1">k </span><span class="s3">= </span><span class="s1">k</span><span class="s3">+</span><span class="s5">1</span>
+        <span class="s1">b</span><span class="s3">.</span><span class="s1">append</span><span class="s3">(</span><span class="s1">round</span><span class="s3">((((</span><span class="s5">86400</span><span class="s3">-</span><span class="s1">all</span><span class="s3">[</span><span class="s1">a</span><span class="s3">])/</span><span class="s5">86400</span><span class="s3">)*</span><span class="s5">100</span><span class="s3">),</span><span class="s5">2</span><span class="s3">))</span>
+    <span class="s1">fig </span><span class="s3">= </span><span class="s1">go</span><span class="s3">.</span><span class="s1">Figure</span><span class="s3">(</span><span class="s1">data</span><span class="s3">=[</span><span class="s1">go</span><span class="s3">.</span><span class="s1">Table</span><span class="s3">(</span><span class="s1">header</span><span class="s3">=</span><span class="s1">dict</span><span class="s3">(</span><span class="s1">values</span><span class="s3">=[</span><span class="s4">'Companies'</span><span class="s3">, </span><span class="s4">'URL'</span><span class="s3">, </span><span class="s4">'TotalRunTime'</span><span class="s3">, </span><span class="s4">'Downtime'</span><span class="s3">, </span><span class="s4">'UpTime'</span><span class="s3">, </span><span class="s4">'SumDowntime'</span><span class="s3">]),</span>
+        <span class="s1">cells</span><span class="s3">=</span><span class="s1">dict</span><span class="s3">(</span><span class="s1">values</span><span class="s3">=[[</span><span class="s1">u</span><span class="s3">[</span><span class="s5">0</span><span class="s3">][</span><span class="s5">0</span><span class="s3">], </span><span class="s1">u</span><span class="s3">[</span><span class="s5">1</span><span class="s3">][</span><span class="s5">0</span><span class="s3">], </span><span class="s1">u</span><span class="s3">[</span><span class="s5">2</span><span class="s3">][</span><span class="s5">0</span><span class="s3">], </span><span class="s1">u</span><span class="s3">[</span><span class="s5">3</span><span class="s3">][</span><span class="s5">0</span><span class="s3">], </span><span class="s1">u</span><span class="s3">[</span><span class="s5">4</span><span class="s3">][</span><span class="s5">0</span><span class="s3">]],</span>
+                           <span class="s3">[</span><span class="s1">u</span><span class="s3">[</span><span class="s5">0</span><span class="s3">][</span><span class="s5">1</span><span class="s3">], </span><span class="s1">u</span><span class="s3">[</span><span class="s5">1</span><span class="s3">][</span><span class="s5">1</span><span class="s3">], </span><span class="s1">u</span><span class="s3">[</span><span class="s5">2</span><span class="s3">][</span><span class="s5">1</span><span class="s3">], </span><span class="s1">u</span><span class="s3">[</span><span class="s5">3</span><span class="s3">][</span><span class="s5">1</span><span class="s3">], </span><span class="s1">u</span><span class="s3">[</span><span class="s5">4</span><span class="s3">][</span><span class="s5">1</span><span class="s3">]],</span>
+                           <span class="s3">[</span><span class="s1">b</span><span class="s3">[</span><span class="s5">0</span><span class="s3">], </span><span class="s1">b</span><span class="s3">[</span><span class="s5">1</span><span class="s3">],</span><span class="s1">b</span><span class="s3">[</span><span class="s5">2</span><span class="s3">], </span><span class="s1">b</span><span class="s3">[</span><span class="s5">3</span><span class="s3">],</span><span class="s1">b</span><span class="s3">[</span><span class="s5">4</span><span class="s3">]],</span>
+                           <span class="s3">[</span><span class="s1">err_time</span><span class="s3">[</span><span class="s5">0</span><span class="s3">],</span><span class="s1">err_time</span><span class="s3">[</span><span class="s5">1</span><span class="s3">],</span><span class="s1">err_time</span><span class="s3">[</span><span class="s5">2</span><span class="s3">],</span><span class="s1">err_time</span><span class="s3">[</span><span class="s5">3</span><span class="s3">],</span><span class="s1">err_time</span><span class="s3">[</span><span class="s5">4</span><span class="s3">]],</span>
+                           <span class="s3">[</span><span class="s1">run_time</span><span class="s3">[</span><span class="s5">0</span><span class="s3">],</span><span class="s1">run_time</span><span class="s3">[</span><span class="s5">1</span><span class="s3">],</span><span class="s1">run_time</span><span class="s3">[</span><span class="s5">2</span><span class="s3">],</span><span class="s1">run_time</span><span class="s3">[</span><span class="s5">3</span><span class="s3">],</span><span class="s1">run_time</span><span class="s3">[</span><span class="s5">4</span><span class="s3">]],</span>
+                           <span class="s3">[</span><span class="s1">str</span><span class="s3">(</span><span class="s1">timedelta</span><span class="s3">(</span><span class="s1">seconds</span><span class="s3">=</span><span class="s1">all</span><span class="s3">[</span><span class="s5">0</span><span class="s3">])),</span><span class="s1">str</span><span class="s3">(</span><span class="s1">timedelta</span><span class="s3">(</span><span class="s1">seconds</span><span class="s3">=</span><span class="s1">all</span><span class="s3">[</span><span class="s5">1</span><span class="s3">])),</span><span class="s1">str</span><span class="s3">(</span><span class="s1">timedelta</span><span class="s3">(</span><span class="s1">seconds</span><span class="s3">=</span><span class="s1">all</span><span class="s3">[</span><span class="s5">2</span><span class="s3">])),</span><span class="s1">str</span><span class="s3">(</span><span class="s1">timedelta</span><span class="s3">(</span><span class="s1">seconds</span><span class="s3">=</span><span class="s1">all</span><span class="s3">[</span><span class="s5">3</span><span class="s3">])),</span><span class="s1">str</span><span class="s3">(</span><span class="s1">timedelta</span><span class="s3">(</span><span class="s1">seconds</span><span class="s3">=</span><span class="s1">all</span><span class="s3">[</span><span class="s5">4</span><span class="s3">]))]</span>
+                           <span class="s3">]))])</span>
+    <span class="s1">fig</span><span class="s3">.</span><span class="s1">show</span><span class="s3">()</span>
+
+<span class="s1">bot</span><span class="s3">.</span><span class="s1">polling</span><span class="s3">(</span><span class="s1">none_stop</span><span class="s3">=</span><span class="s0">True</span><span class="s3">, </span><span class="s1">interval</span><span class="s3">=</span><span class="s5">0</span><span class="s3">) </span><span class="s2">#Добавление функции непрерывной работы</span></pre>
+</body>
+</html>
