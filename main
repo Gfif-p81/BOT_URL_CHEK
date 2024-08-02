@@ -1,0 +1,241 @@
+import requests #Библиотека для проверки пингов
+from datetime import timedelta, datetime, time, timezone#Библиотека функций веремени
+import time
+import dash #Библиотека для дашборда
+from dash import dcc, html
+import dash_bootstrap_components as dbc
+from dash.dependencies import Input, Output
+import sqlite3 as sl #Библиотека для бд
+#import threading #Библиотека для включения многопоточности
+import telebot  #Добавление библиотеки для рабты с телеграмм ботом
+import urllib3
+import plotly.graph_objects as go #Библиотека графики
+import random #Библиотека рандома
+import pandas as pd
+import plotly.graph_objects as go
+from multiprocessing import Process
+
+urllib3.disable_warnings()
+#Объявление токена бота
+bot = telebot.TeleBot('your_tocken')
+u = [["Сбер","https://www.sberbank.ru", 0],
+    ["ВТБ", "https://online.vtb.ru", 0],
+    ["ГазпромБанк", "https://www.gazprombank.ru/", 0],
+    ["Промсвязьбанк","https://www.psbank.ru/", 0],
+    ["ТБанк", "https://www.tbank.ru", 1]]
+headers = { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 YaBrowser/24.6.0.0 Safari/537.36"}
+all =[0,0,0,0,0]
+
+#Стартовое сообщение бота
+@bot.message_handler(commands=['start'])
+def startBot(message):
+    first_mess = f"Начать проверку сайтов?"
+    bot.send_message(message.chat.id, first_mess)
+    bot.register_next_step_handler(message, check_start)
+
+@bot.message_handler(commands=['отчёт'])
+def startBot(message):
+    mess = f"Сформировать отчёт?"
+    bot.send_message(message.chat.id, mess)
+    bot.register_next_step_handler(message, check_total_stop)
+
+@bot.message_handler(commands=['график'])
+def startBot(message):
+    mess = f"Создаю график"
+    bot.send_message(message.chat.id, mess)
+    app.run_server()
+
+@bot.message_handler(commands=['работа'])
+def startBot(message):
+    mess = f"Собираю статистику"
+    bot.send_message(message.chat.id, mess)
+
+con = sl.connect('baza.db')
+cursor = con.cursor()
+#Открываем базу
+con.execute(""" CREATE TABLE IF NOT EXISTS test (
+                    num INEGER,
+                    comp TEXT,
+                    type TEXT,
+                    url TEXT,
+                    tstop INEGER,
+                    err TEXT,
+                    trun INEGER)
+                """)
+con.commit()
+con.close()
+name = 'main'
+# Пример данных о состоянии сайтов
+initial_data = {
+    'Время': pd.date_range(start='2023-07-31 00:00', end='2023-07-31 23:59', freq='min'),
+    'Сбер': [1] * 1440,
+    'ВТБ': [1] * 1440,
+    'ГазпромБанк': [1] * 1440,
+    'Промсвязьбанк': [1] * 1440,
+    'ТБанк': [1] * 1440
+}
+
+df = pd.DataFrame(initial_data)
+
+app = dash.Dash(name)
+
+app.layout = html.Div(children=[
+    html.H1(children='Дашборд состояния сайтов'),
+
+    dcc.Graph(id='status-graph')
+])
+
+def update_status(site, start_time, end_time, status):
+    try:
+        start_time = datetime.strptime(f'2023-07-31 {start_time}', '%Y-%m-%d %H:%M')
+        end_time = datetime.strptime(f'2023-07-31 {end_time}', '%Y-%m-%d %H:%M')
+        df.loc[(df['Время'] >= start_time) & (df['Время'] <= end_time), site] = status
+    except ValueError:
+        print("Неверный формат времени. Используйте HH:MM.")
+
+def create_figure():
+    traces = []
+    for column in df.columns[1:]:
+        traces.append(go.Scatter(
+            x=df['Время'],
+            y=df[column],
+            mode='lines+markers',
+            name=column
+        ))
+
+    return {
+        'data': traces,
+        'layout': go.Layout(
+            title='Состояние сайтов за день',
+            xaxis={'title': 'Время'},
+            yaxis={'title': 'Состояние (1 - доступен, 0 - недоступен)'}
+        )
+    }
+
+@app.callback(Output('status-graph', 'figure'), Input('status-graph', 'id'))
+def display_graph(_):
+    return create_figure()
+# Функция для проверки доступности сайта
+def check_website_status(i):
+    try:
+        response= requests.get(i, headers=headers, verify=False, timeout=5)
+        return response.status_code
+    except requests.exceptions.RequestException:
+        return False
+
+# Цикл проверки сайтов с отчётом в чат каждые 5-6 минут
+def check_start(message):
+    num = 1
+    while True:
+        for a in range(len(u)):
+            now = datetime.now()
+            t = now.hour * 3600 + now.minute * 60 + now.second
+            s = check_website_status(u[a][1])
+            if s == 200 and u[a][2] >0 :
+                con = sl.connect('baza.db')
+                cursor = con.cursor()
+                cursor.execute("""UPDATE "test" SET "trun"=? WHERE "num"=?""", (t, u[a][2]))
+                con.commit()
+                con.close()
+                bot.send_message(message.chat.id, f"Сайт компании {u[a][0]}  - {u[a][1]} в {now.time()} доступен.")
+                u[a][2] = 0
+            if s >= 400 and u[a][2] == 0:
+                u[a][2] = num
+                num = num + 1
+                con = sl.connect('baza.db')
+                cursor = con.cursor()
+                cursor.execute("""INSERT INTO test (num, comp, type, url, tstop, err, trun) VALUES (?,?,?,?,?,?,?)""", (u[a][2], u[a][0], "Сайт", u[a][1], t, s, -1))
+                con.commit()
+                con.close()
+                bot.send_message(message.chat.id, f"Сайт компании {u[a][0]} - {u[a][1]} в {now.time()} недоступен. Код состояния: {s}")
+            if s == False and u[a][2] == 0:
+                u[a][2] = num
+                num = num + 1
+                con = sl.connect('baza.db')
+                cursor = con.cursor()
+                cursor.execute("""INSERT INTO test (num, comp, type, url, tstop, err, trun) VALUES (?,?,?,?,?,?,?)""",(u[a][2], u[a][0], "Сайт", u[a][1], t, "TIMED_OUT",-1))
+                con.commit()
+                con.close()
+                bot.send_message(message.chat.id, f"Время ожидания ответа от cайта компании {u[a][0]} - {u[a][1]} в {now.time()} превышено.")
+        print(datetime.now())
+        time.sleep(random.uniform(300, 330))
+
+#Функция провеки наличия ошибок при подключении к сайту и получения информации из БД
+def down_time(b,i,err_num):
+    try:
+        # Подключение к базе данных
+        con = sl.connect('baza.db')
+        cursor = con.cursor()
+        cursor.execute("SELECT trun FROM test WHERE comp = ? AND num = ?", (b, i))
+        t1 = cursor.fetchone()
+        cursor.close()
+        con.close()
+        run = t1[err_num]
+        if run == -1:
+            now = datetime.now()
+            t = now.hour * 3600 + now.minute * 60 + now.second
+            run = t
+        con = sl.connect('baza.db')
+        cursor = con.cursor()
+        cursor.execute("SELECT tstop FROM test WHERE comp = ? AND num = ?", (b, i))
+        t2 = cursor.fetchone()
+        stop = t2[err_num]
+        cursor.close()
+        con.close()
+        return [run,stop]
+    except:
+        return [0,0]
+
+#Функция вычитания
+def time_difference(t1, t2):
+    if t1 > t2:
+        delta = t1 - t2
+    else:
+        delta = t2 - t1
+
+    return delta
+
+def convert_seconds_to_time(seconds):
+    hours = seconds // 3600
+    minutes = (seconds % 3600) // 60
+    return f"{hours:02}:{minutes:02}"
+
+#Фукнция для создания отчёта и вывода таблицы
+def check_total_stop(m):
+    b = []
+    # Подключение к базе данных
+    con = sl.connect('baza.db')
+    cursor = con.cursor()
+    # Выполнение SQL-запроса для подсчета строк
+    cursor.execute('SELECT COUNT(*) FROM test')
+    # Получение результата
+    row_count = cursor.fetchone()[0]
+    err_time = ([],[],[],[],[])
+    run_time = ([],[],[],[],[])
+    k=0
+    for a in range(len(u)):
+        err_num = 0
+        for i in range(row_count):
+            p = down_time(u[a][0], i+1, err_num)
+            all[a] = all[a] + p[0] - p[1]
+            if p != [0,0]:
+                err_num = err_num + 1
+            if p[0] != 0 and p[1] != 0:
+                m1 = convert_seconds_to_time(p[0])
+                m2 = convert_seconds_to_time(p[1])
+                err_time[k].append(m2)
+                run_time[k].append(m1)
+                update_status(u[a][0], m2, m1, 0)
+        k = k+1
+        b.append(round((((86400-all[a])/86400)*100),2))
+    fig = go.Figure(data=[go.Table(header=dict(values=['Companies', 'URL', 'TotalRunTime', 'Downtime', 'UpTime', 'SumDowntime']),
+        cells=dict(values=[[u[0][0], u[1][0], u[2][0], u[3][0], u[4][0]],
+                           [u[0][1], u[1][1], u[2][1], u[3][1], u[4][1]],
+                           [b[0], b[1],b[2], b[3],b[4]],
+                           [err_time[0],err_time[1],err_time[2],err_time[3],err_time[4]],
+                           [run_time[0],run_time[1],run_time[2],run_time[3],run_time[4]],
+                           [str(timedelta(seconds=all[0])),str(timedelta(seconds=all[1])),str(timedelta(seconds=all[2])),str(timedelta(seconds=all[3])),str(timedelta(seconds=all[4]))]
+                           ]))])
+    fig.show()
+
+bot.polling(none_stop=True, interval=0) #Добавление функции непрерывной работы
